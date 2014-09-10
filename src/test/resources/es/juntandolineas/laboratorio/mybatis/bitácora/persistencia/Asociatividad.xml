@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Este documento es parte del proyecto 'Juntando Líneas'
+
+Copyright (C) 2012 Antonio Sánchez - Todos los derechos reservados
+
+'Juntando Líneas' es software libre: Ud. puede redistribuirlo y/o modificarlo 
+bajo los términos de la Licencia Pública General de GNU tal como está publicada 
+por la Fundación para el Software Libre, ya sea la versión 3 de la Licencia, o 
+(a su elección) cualquier versión posterior.
+
+'Juntando Líneas' se distribuye con la esperanza de que sea útil, pero 
+SIN GARANTÍA ALGUNA; ni siquiera la garantía implícita MERCANTIL o de 
+APTITUD PARA UN PROPÓSITO DETERMINADO. Consulte los detalles de la 
+Licencia Pública General GNU para obtener una información más detallada. 
+
+Debería haber recibido una copia de la Licencia Pública General GNU junto a 
+'Juntando Líneas'. En caso contrario, consulte <http://www.gnu.org/licenses/>.
+-->
+
+
+<mapper	namespace="es.juntandolineas.laboratorio.mybatis.bitácora.persistencia.Asociatividad">
+
+<!-- 	<cache />  	-->
+
+    <sql id="autoresConArtículos">
+        SELECT a.id as aut_id, 
+            t.id as art_id, 
+            nombre, 
+            asunto
+        FROM autor a
+        LEFT JOIN artículo t ON a.id = t.aut_id     
+        ORDER BY aut_id
+    </sql> 
+    
+    <sql id="bitácoraPorId">
+        SELECT * FROM bitácora WHERE id = #{id}    
+    </sql> 
+    
+    <sql id="bitácorasConAutores">
+        SELECT *, 
+                b.id AS bit_id
+        FROM bitácora b, 
+                autor a
+        WHERE b.aut_id = a.id
+        ORDER BY bit_id
+    </sql>
+    
+    <select id="todasEtiquetas" resultType="Etiqueta">
+        SELECT * FROM etiqueta
+    </select>        
+
+    <!-- Consulta sin asociación -->
+        
+    <select id="autorPorId" parameterType="int" resultType="Autor">
+        SELECT * FROM autor WHERE id = #{id}
+    </select> 
+    
+<!-- **********************************************  
+     COLECCIÓN POR MAPA 
+     **********************************************
+-->
+	
+    <select id="autoresConArtículosPorMapaAnidado" resultMap="MapaAutoresConArtículos">
+        <include refid="autoresConArtículos"/>            
+    </select> 
+    
+    <resultMap id="MapaAutoresConArtículos" type="Autor">
+        <id property="id" column="aut_id" />        <!-- ES NECESARIO -->
+        <result property="nombre" column="nombre" />
+        
+        <collection property="artículos" ofType="Artículo" >
+            <!-- Se puede definir la colección de varias formas: -->
+<!--        <collection property="artículos" javaType="java.util.LinkedList" ofType="Artículo" >-->
+<!--        <collection property="artículos" javaType="arrayList" ofType="Artículo" >-->
+<!--        <collection property="artículos" javaType="ArrayList" ofType="Artículo" >-->
+            <id property="id" column="art_id"/>
+            <result property="asunto" column="asunto"/>
+        </collection>  		                
+    </resultMap>
+    
+    <!-- USO INDEBIDO: En mapa anidado el uso de 'column' es irrelevante, mejor omitirlo, y de hecho debería estar prohibido (si se utilizara XML Schema o RELAX NG) -->
+    
+    <select id="USO_INDEBIDO_autoresConArtículosPorMapaAnidadoColumnaInexistente" parameterType="int" resultMap="MapaAutoresConArtículosPorMapaAnidadoColumnaInexistente">
+        <include refid="autoresConArtículos"/>
+    </select>
+    
+    <resultMap id="MapaAutoresConArtículosPorMapaAnidadoColumnaInexistente" type="Autor">
+        <id property="id" column="aut_id" />        
+        
+        <collection property="artículos" column="NOEXISTE" ofType="Artículo" >
+            <id property="id" column="art_id"/>
+        </collection>  		                
+    </resultMap>
+    
+    <select id="USO_INDEBIDO_autoresConArtículosPorMapaAnidadoColumnaIncorrecta" parameterType="int" resultMap="MapaAutoresConArtículosPorMapaAnidadoColumnaIncorrecta">
+        <include refid="autoresConArtículos"/>
+    </select>
+    
+    <resultMap id="MapaAutoresConArtículosPorMapaAnidadoColumnaIncorrecta" type="Autor">
+        <id property="id" column="aut_id" />        
+        
+        <collection property="artículos" column="asunto" ofType="Artículo" >
+            <id property="id" column="art_id"/>
+        </collection>  		                
+    </resultMap>
+    
+        
+<!--  USO INCORRECTO: Este mapa no tiene ID en Autor. El número de autores será incorrecto. 
+      En este caso se da la circunstancia de que hay dos autores distintos con el mismo nombre. -->
+    <select id="USO_INCORRECTO_AutoresConArtículosMapaSinID" resultMap="Mapa_USO_INCORRECTO_AutoresConArtículosSinID">
+        <include refid="autoresConArtículos"/>            
+    </select> 
+    
+    <resultMap id="Mapa_USO_INCORRECTO_AutoresConArtículosSinID" type="Autor">
+<!--        <id property="id" column="aut_id" />-->
+        <result property="nombre" column="nombre" />
+        
+        <collection property="artículos" ofType="Artículo" >
+            <id property="id" column="art_id"/>
+            <result property="asunto" column="asunto"/>
+        </collection>  		                
+    </resultMap>
+    
+<!-- **********************************************  
+     COLECCIÓN POR CONSULTA 
+     **********************************************  -->
+
+<!--  Uso correcto: se utiliza 'column' con un valor correcto y la consulta anidada define un parámetro para el 'column'-->
+    <select id="bitácoraConArtículosEnConsultaAnidada" parameterType="int" resultMap="MapaBitácoraConArtículosEnConsultaAnidada">
+        <include refid="bitácoraPorId"/>
+    </select>
+    
+    <resultMap id="MapaBitácoraConArtículosEnConsultaAnidada" type="Bitácora">
+            <id property="id" column="id" /> 
+            <collection property="artículos" column="id" ofType="Artículo" select="artículosSimplesDeBitácora"/>
+    </resultMap>
+    
+    <select id="artículosSimplesDeBitácora" parameterType="int" resultType="Artículo">
+        SELECT * FROM artículo WHERE bit_id = #{id}
+    </select>    
+    
+    <!-- Uso correcto: Este caso muestra que el valor de 'column' en 'collection' por consulta debe ser la columna o columnas 
+    en la consulta externa que hace la correspondencia entre las filas de las consultas externa. En este caso, como normalmente
+    será, se trata de la columna que corresponde a la clave ajena de la consulta anidada.-->    
+    <select id="bitácorasConArtículosEnConsultaAnidada" parameterType="int" resultMap="MapaBitácorasConArtículosEnConsultaAnidada">
+        SELECT id AS bitac_id,
+            aut_id,
+            título
+        FROM bitácora 
+        ORDER BY id
+    </select>
+    
+    <resultMap id="MapaBitácorasConArtículosEnConsultaAnidada" type="Bitácora">
+            <id property="id" column="bitac_id" /> 
+            <collection property="artículos" column="bitac_id" ofType="Artículo" select="artículosSimplesDeBitácora"/>
+    </resultMap>
+    
+<!--  USO INCORRECTO: si column no tiene un valor reconocido de la consulta padre entonces MB no realize la consulta -->
+    <select id="USO_INCORRECTO_BitácorasConArtículosEnConsultaAnidadaConColumnInexistente" parameterType="int" resultMap="Mapa_USO_INCORRECTO_BitácorasConArtículosEnConsultaAnidadaConColumnInexistente">
+        <include refid="bitácoraPorId"/>
+    </select>
+    
+    <resultMap id="Mapa_USO_INCORRECTO_BitácorasConArtículosEnConsultaAnidadaConColumnInexistente" type="Bitácora">
+        <collection property="todasEtiquetas" column="" ofType="Etiqueta" select="todasEtiquetas"/>
+    </resultMap>        
+    
+<!--  USO EXTRAÑO: la consulta anidada no define un parámetro (carga la tabla entera) pero la colección es cargada 
+       porque 'column' tiene un valor reconocido y MB ejecuta la consulta aunque no haya paso de parámetros. -->
+    <select id="USO_EXTRAÑO_BitácorasConArtículosEnConsultaAnidadaSinParámetro" parameterType="int" resultMap="Mapa_USO_EXTRAÑO_BitácorasConArtículosEnConsultaAnidadaSinParámetro">
+        <include refid="bitácoraPorId"/>
+    </select>
+    
+    <resultMap id="Mapa_USO_EXTRAÑO_BitácorasConArtículosEnConsultaAnidadaSinParámetro" type="Bitácora">
+        <collection property="todasEtiquetas" column="título" ofType="Etiqueta" select="todasEtiquetas"/>
+    </resultMap>            
+    
+    
+<!-- **********************************************  
+     ASOCIACIÓN POR MAPA 
+     **********************************************  -->
+    
+    <!-- Mapa de bitácora por id. con autor asociado-->
+    <select id="bitácorasConAutorPorMapaAnidado" resultMap="MapaBitácorasConAutor">
+        <include refid="bitácorasConAutores"/>
+    </select>
+
+    <resultMap id="MapaBitácorasConAutor" type="Bitácora">
+        <id property="id" column="bit_id" />
+        <association property="autor" javaType="Autor" >
+            <id property="id" column="aut_id" />
+        </association>
+    </resultMap>     
+    
+    <!-- En mapa anidado el uso de 'column' es irrelevante, mejor omitirlo -->    
+    
+    <select id="USO_INDEBIDO_BitácorasConAutorPorMapaAnidadoColumnaInexistente" resultMap="MapaBitácorasConAutorPorMapaAnidadoColumnaInexistente">
+        <include refid="bitácorasConAutores"/>
+    </select>
+    
+    <resultMap id="MapaBitácorasConAutorPorMapaAnidadoColumnaInexistente" type="Bitácora">
+        <id property="id" column="bit_id" />        
+        
+        <association property="autor" column="NOEXISTE" javaType="Autor" >
+            <id property="id" column="aut_id" />
+        </association>
+    </resultMap>
+    
+    <select id="USO_INDEBIDO_BitácorasConAutorPorMapaAnidadoColumnaIncorrecta" resultMap="MapaBitácorasConAutorPorMapaAnidadoColumnaIncorrecta">
+        <include refid="bitácorasConAutores"/>
+    </select>
+    
+    <resultMap id="MapaBitácorasConAutorPorMapaAnidadoColumnaIncorrecta" type="Bitácora">
+        <id property="id" column="bit_id" />        
+        
+        <association property="autor" column="name" javaType="Autor" >
+            <id property="id" column="aut_id" />
+        </association>
+    </resultMap>
+    
+<!-- **********************************************  
+     ASOCIACIÓN POR CONSULTA
+     **********************************************  -->
+     
+<!--  Bitácora con autor en asociación mediante consulta anidada -->
+    <select id="bitácorasConAutorEnConsultaAnidada" resultMap="MapaBitácorasConAutorEnConsultaAnidada">
+        SELECT * FROM bitácora 
+    </select>
+    
+    <resultMap id="MapaBitácorasConAutorEnConsultaAnidada" type="Bitácora">
+            <association property="autor" column="aut_id" javaType="Autor" select="autorPorId"/>
+    </resultMap>
+
+<!--  USO INCORRECTO: 'column' en association no se refiere a la columna que hace la correspondencia entre las filas
+        de ambas consultas. En este caso, como normalmente será, se debería de haber utilizado la clave ajena de la 
+        consulta anidada en la consulta externa. -->    
+    <select id="USO_INCORRECTO_BitácoraConAutorEnConsultaAnidadaConColumnIncorrectaEnAssociaton" parameterType="int" resultMap="Mapa_USO_INCORRECTO_BitácoraConAutorEnConsultaAnidadaConColumnIncorrectaEnAssociaton">
+        SELECT * FROM bitácora WHERE id = #{id}
+    </select>
+    
+    <resultMap id="Mapa_USO_INCORRECTO_BitácoraConAutorEnConsultaAnidadaConColumnIncorrectaEnAssociaton" type="Bitácora">
+            <association property="autor" column="títulos"  javaType="Autor" select="autorPorId"/>
+    </resultMap>
+    
+
+    
+</mapper>

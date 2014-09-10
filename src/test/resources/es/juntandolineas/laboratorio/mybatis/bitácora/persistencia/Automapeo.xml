@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Este documento es parte del proyecto 'Juntando Líneas'
+
+Copyright (C) 2012 Antonio Sánchez - Todos los derechos reservados
+
+'Juntando Líneas' es software libre: Ud. puede redistribuirlo y/o modificarlo 
+bajo los términos de la Licencia Pública General de GNU tal como está publicada 
+por la Fundación para el Software Libre, ya sea la versión 3 de la Licencia, o 
+(a su elección) cualquier versión posterior.
+
+'Juntando Líneas' se distribuye con la esperanza de que sea útil, pero 
+SIN GARANTÍA ALGUNA; ni siquiera la garantía implícita MERCANTIL o de 
+APTITUD PARA UN PROPÓSITO DETERMINADO. Consulte los detalles de la 
+Licencia Pública General GNU para obtener una información más detallada. 
+
+Debería haber recibido una copia de la Licencia Pública General GNU junto a 
+'Juntando Líneas'. En caso contrario, consulte <http://www.gnu.org/licenses/>.
+-->
+
+<mapper namespace="es.juntandolineas.laboratorio.mybatis.bitácora.persistencia.Automapeo">
+
+    <sql id="consultaBitácoraYAutor">
+        SELECT *, 
+                b.id AS bit_id
+        FROM bitácora b, 
+                autor a
+        WHERE b.id = #{id}
+                AND b.aut_id = a.id
+    </sql>
+    
+<!-- **********************************************  
+     MAPAS CON/SIN ASOCIACIÓN
+     **********************************************  -->
+    
+
+    <!-- Mapa de bitácora por id. con autor asociado-->
+    <select id="bitácoraConAutorAsociado" parameterType="int" resultMap="MapeoBitácoraConAutorAsociado">
+        <include refid="consultaBitácoraYAutor"/>
+    </select>
+
+    <resultMap id="MapeoBitácoraConAutorAsociado" type="Bitácora">
+            <id property="id" column="bit_id" />
+            <association property="autor" javaType="Autor" >
+                    <id property="id" column="aut_id" />
+            </association>
+    </resultMap>
+
+    <!-- Mapa de bitácora por id. sin autor asociado-->
+    <select id="bitácoraSinAutorAsociado" resultMap="MapeoBitácoraSinAutor"> 
+        <include refid="consultaBitácoraYAutor"/>
+    </select> 
+
+    <resultMap id="MapeoBitácoraSinAutor" type="Bitácora"> 
+            <id property="id" column="bit_id" /> 
+    </resultMap> 
+    
+<!-- **********************************************  
+     NOTACIÓN OGNL
+     **********************************************  -->
+
+    <!-- Mapa de bitácora por id. con autor mediante results con ognl -->
+    <select id="getBitácoraConAutorPorOgnlEnMapa" parameterType="int" resultMap="MapeoBitácoraConAutorPorOgnlEnMapa">
+        <include refid="consultaBitácoraYAutor"/>    
+    </select>
+
+    <resultMap id="MapeoBitácoraConAutorPorOgnlEnMapa" type="Bitácora">  
+            <id property="id" column="bit_id"/> 
+            <result property="autor.id" column="aut_id" />  
+            <result property="autor.nombre" column="nombre" />
+            
+    </resultMap> 
+
+    <!-- Mapa de bitácora por id. con autor mediante ognl en alias de sql-->
+    <!-- NOTA: Las comillas del alias son necesarias -->
+    <select id="getBitácoraConAutorPorOgnlEnSQL" parameterType="int" resultType="Bitácora">
+            SELECT b.id,
+                b.título,
+                a.id as "autor.id",
+                a.nombre as "autor.nombre",
+                a.usuario
+            FROM bitácora b, 
+                autor a
+            WHERE b.id = #{id} 
+                AND b.aut_id = a.id
+    </select>
+    
+<!-- **********************************************  
+     SIN MAPA, ResultType directo.
+     **********************************************  -->
+
+    <!-- Consulta directa a tipo, sin mapa -->
+    <select id="bitácoraSinMapeo" parameterType="int" resultType="Bitácora">
+        select * from bitácora where id = #{id}
+    </select>
+    
+<!-- **********************************************  
+     MAPA CON COLECCIÓN ANIDADA
+     **********************************************  -->
+    
+    
+<!--     Mapa de bitácora por id. con colección de artículos-->
+    <select id="bitácoraConArtículosEnMapaAnidado" parameterType="int" resultMap="MapaBitácoraConArtículos">
+        SELECT b.id AS bit_id,
+            a.id AS art_id,
+            *
+        FROM bitácora b, 
+            artículo a
+        WHERE b.id = #{id}
+            AND b.id = a.bit_id
+    </select>
+    
+    <resultMap id="MapaBitácoraConArtículos" type="Bitácora">
+            <id property="id" column="bit_id" />
+            <collection property="artículos" ofType="Artículo" >
+                    <id property="id" column="art_id" />
+            </collection>
+    </resultMap>
+    
+<!-- **********************************************  
+     MAPAS DE CONSULTA ANIDADA
+     - En los casos aquí presentados no hace falta probar FULL porque se trata
+     de consultas sencillas que solo implican una tabla de una vez.
+     **********************************************  -->
+
+<!--  Bitácora con artículos en colección mediante consulta anidada -->
+    <select id="bitácoraConArtículosEnConsultaAnidada" parameterType="int" resultMap="MapaBitácoraConArtículosEnConsultaAnidada">
+        SELECT * FROM bitácora WHERE id = #{id}
+    </select>
+    
+    <resultMap id="MapaBitácoraConArtículosEnConsultaAnidada" type="Bitácora">
+            <id property="id" column="id" /> <!-- ES NECESARIO -->
+            <collection property="artículos" column="id" ofType="Artículo" select="artículosSimplesDeBitácora"/>
+    </resultMap>
+    
+    <select id="artículosSimplesDeBitácora" parameterType="int" resultType="Artículo">
+        SELECT * FROM artículo WHERE bit_id = #{id}
+    </select>
+    
+<!--  Bitácora con autor en asociación mediante consulta anidada -->
+    <select id="bitácoraConAutorEnConsultaAnidada" parameterType="int" resultMap="MapaBitácoraConAutorEnConsultaAnidada">
+        SELECT * FROM bitácora WHERE id = #{id}
+    </select>
+    
+    <resultMap id="MapaBitácoraConAutorEnConsultaAnidada" type="Bitácora">
+            <association property="autor" column="aut_id" javaType="Autor" select="autorSimple"/>
+    </resultMap>
+    
+    <select id="autorSimple" parameterType="int" resultType="Autor">
+        SELECT * FROM autor WHERE id = #{id}
+    </select>
+
+</mapper>

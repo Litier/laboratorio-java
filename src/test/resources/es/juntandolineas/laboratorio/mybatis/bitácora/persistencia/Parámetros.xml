@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Este documento es parte del proyecto 'Juntando Líneas'
+
+Copyright (C) 2012 Antonio Sánchez - Todos los derechos reservados
+
+'Juntando Líneas' es software libre: Ud. puede redistribuirlo y/o modificarlo 
+bajo los términos de la Licencia Pública General de GNU tal como está publicada 
+por la Fundación para el Software Libre, ya sea la versión 3 de la Licencia, o 
+(a su elección) cualquier versión posterior.
+
+'Juntando Líneas' se distribuye con la esperanza de que sea útil, pero 
+SIN GARANTÍA ALGUNA; ni siquiera la garantía implícita MERCANTIL o de 
+APTITUD PARA UN PROPÓSITO DETERMINADO. Consulte los detalles de la 
+Licencia Pública General GNU para obtener una información más detallada. 
+
+Debería haber recibido una copia de la Licencia Pública General GNU junto a 
+'Juntando Líneas'. En caso contrario, consulte <http://www.gnu.org/licenses/>.
+-->
+
+
+<mapper	namespace="es.juntandolineas.laboratorio.mybatis.bitácora.persistencia.Parámetros">
+    
+    <sql id="artículosPorAutorYTextoNotaciónGrano">
+        select * from artículo where aut_id = #{id} and cuerpo like '%${texto}%'
+    </sql>
+   
+   
+<!-- **********************************************  
+     PARÁMETROS SIMPLES POR INTERFAZ
+     ********************************************** -->
+
+    <select id="artículosPorAutorYTextoEnCuerpoPorInterfaz" resultType="Artículo">
+        select * from artículo where aut_id = #{param1} and cuerpo like '%${param2}%'
+    </select> 
+    
+    <select id="artículosPorAutorPorInterfaz" resultType="Artículo">
+        select * from artículo where aut_id = #{param1}
+    </select>     
+    
+<!-- **********************************************  
+     PARÁMETROS POR GRANO
+     ********************************************** -->    
+    
+    <select id="artículosPorAutorYTextoEnCuerpoPorGranoYParámetro" parameterType="Grano" resultType="Artículo">
+        <include refid="artículosPorAutorYTextoNotaciónGrano" />
+    </select> 
+    
+    <select id="artículosPorAutorYTextoEnCuerpoPorGranoSinParámetro" resultType="Artículo">
+        <include refid="artículosPorAutorYTextoNotaciónGrano" />
+    </select> 
+    
+    <!-- FALLA: cuando curiosamente acepta el caso de usar dos granos en interfaz.
+        There is no getter for property named 'param1' in 'class es.juntandolineas.laboratorio.mybatis.bitácora.persistencia.Parámetros$Grano' 
+    -->
+    <select id="artículosPorAutorYTextoEnCuerpoPorGranoNotaciónParam" resultType="Artículo">
+        select * from artículo where aut_id = #{param1.id} and cuerpo like '%${param1.texto}%'
+    </select> 
+    
+    <!-- Requiere que param2 sea público o tenga get, supongo que por la notación ${} -->
+    <select id="artículosPorAutorYTextoEnCuerpoPorMúltiplesGranos" resultType="Artículo">
+        select * from artículo where aut_id = #{param1.id} and cuerpo like '%${param2.texto}%'
+    </select> 
+    
+    
+<!-- **********************************************  
+     PARÁMETROS POR MAPA
+     ********************************************** -->
+
+    <select id="artículosPorAutorYTextoEnCuerpoPorMapa" parameterType="map" resultType="Artículo">
+        <include refid="artículosPorAutorYTextoNotaciónGrano" />
+    </select> 
+
+</mapper>

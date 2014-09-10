@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"   "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<!--
+Este documento es parte del proyecto 'Juntando Líneas'
+
+Copyright (C) 2012 Antonio Sánchez - Todos los derechos reservados
+
+'Juntando Líneas' es software libre: Ud. puede redistribuirlo y/o modificarlo 
+bajo los términos de la Licencia Pública General de GNU tal como está publicada 
+por la Fundación para el Software Libre, ya sea la versión 3 de la Licencia, o 
+(a su elección) cualquier versión posterior.
+
+'Juntando Líneas' se distribuye con la esperanza de que sea útil, pero 
+SIN GARANTÍA ALGUNA; ni siquiera la garantía implícita MERCANTIL o de 
+APTITUD PARA UN PROPÓSITO DETERMINADO. Consulte los detalles de la 
+Licencia Pública General GNU para obtener una información más detallada. 
+
+Debería haber recibido una copia de la Licencia Pública General GNU junto a 
+'Juntando Líneas'. En caso contrario, consulte <http://www.gnu.org/licenses/>.
+-->
+
+<configuration>
+
+    <!-- <settings>
+    	<setting name="autoMappingBehavior" value="PARTIAL"/>
+    </settings> -->
+    
+    <typeAliases>
+        <typeAlias alias="Autor" type="es.juntandolineas.laboratorio.mybatis.bitácora.dominio.Autor"/>
+        <typeAlias alias="Bitácora" type="es.juntandolineas.laboratorio.mybatis.bitácora.dominio.Bitácora"/>
+        <typeAlias alias="Artículo" type="es.juntandolineas.laboratorio.mybatis.bitácora.dominio.Artículo"/>
+        <typeAlias alias="Comentario" type="es.juntandolineas.laboratorio.mybatis.bitácora.dominio.Comentario"/>
+        <typeAlias alias="Etiqueta" type="es.juntandolineas.laboratorio.mybatis.bitácora.dominio.Etiqueta"/>
+        <typeAlias alias="Categoría" type="es.juntandolineas.laboratorio.mybatis.bitácora.dominio.Categoría"/>
+        <typeAlias alias="Menú" type="es.juntandolineas.laboratorio.mybatis.bitácora.dominio.Menú"/>
+        
+        <typeAlias alias="Grano" type="es.juntandolineas.laboratorio.mybatis.bitácora.persistencia.Parámetros$Grano"/>
+    </typeAliases>    
+
+    <environments default="bdlabmybatis">
+        <environment id="bdlabmybatis">
+            <transactionManager type="JDBC"/>
+            <dataSource type="UNPOOLED">
+                <property name="driver" value="org.h2.Driver"/>
+                <property name="url" value="jdbc:h2:mem;INIT=RUNSCRIPT FROM 'classpath:/conf/bitácora-esquema.h2.sql'\;RUNSCRIPT FROM 'classpath:/conf/bitácora-carga.h2.sql'"/>
+            </dataSource>
+        </environment>
+    </environments>
+    
+    <mappers>
+        <mapper resource="es/juntandolineas/laboratorio/mybatis/bitácora/persistencia/Actualización.xml"/>
+        <mapper resource="es/juntandolineas/laboratorio/mybatis/bitácora/persistencia/Automapeo.xml"/>
+        <mapper resource="es/juntandolineas/laboratorio/mybatis/bitácora/persistencia/Asociatividad.xml"/>
+        <mapper resource="es/juntandolineas/laboratorio/mybatis/bitácora/persistencia/Circularidad.xml"/>        
+        <mapper resource="es/juntandolineas/laboratorio/mybatis/bitácora/persistencia/Parámetros.xml"/>
+    </mappers>    
+
+</configuration>

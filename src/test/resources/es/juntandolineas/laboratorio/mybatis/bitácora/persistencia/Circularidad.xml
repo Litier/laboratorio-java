@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+Este documento es parte del proyecto 'Juntando Líneas'
+
+Copyright (C) 2012 Antonio Sánchez - Todos los derechos reservados
+
+'Juntando Líneas' es software libre: Ud. puede redistribuirlo y/o modificarlo 
+bajo los términos de la Licencia Pública General de GNU tal como está publicada 
+por la Fundación para el Software Libre, ya sea la versión 3 de la Licencia, o 
+(a su elección) cualquier versión posterior.
+
+'Juntando Líneas' se distribuye con la esperanza de que sea útil, pero 
+SIN GARANTÍA ALGUNA; ni siquiera la garantía implícita MERCANTIL o de 
+APTITUD PARA UN PROPÓSITO DETERMINADO. Consulte los detalles de la 
+Licencia Pública General GNU para obtener una información más detallada. 
+
+Debería haber recibido una copia de la Licencia Pública General GNU junto a 
+'Juntando Líneas'. En caso contrario, consulte <http://www.gnu.org/licenses/>.
+-->
+
+
+<mapper	namespace="es.juntandolineas.laboratorio.mybatis.bitácora.persistencia.Circularidad">
+
+<!-- 	<cache />  	-->
+
+    <sql id="autorConBitácoras">
+        SELECT *,   
+            a.id AS autor_id,
+            b.id AS bitácora_id
+        FROM autor a,
+            bitácora b
+        WHERE a.id = #{id} 
+            AND b.aut_id = a.id        
+    </sql>
+ 	
+    <select id="getAutorConBitácoras" parameterType="int" resultMap="MapeoAutor">
+        <include refid="autorConBitácoras"/>
+    </select>
+	
+    <resultMap id="MapeoAutor" type="Autor">
+        <id property="id" column="autor_id" />
+        
+        <result property="nombre" column="nombre" />
+        
+        <collection property="bitácoras" ofType="Bitácora" >
+            <id property="id" column="bitácora_id"/>
+            <association property="autor" resultMap="MapeoAutor" />
+        </collection>  		                
+    </resultMap>
+    
+    <!-- -->
+    
+    <select id="getMenús" resultMap="MapeoMenú">
+<!--        SELECT * FROM menú-->
+<!--        SELECT m1.*, 
+            m2.id AS id_hijo 
+        FROM menú m1
+        JOIN menú m2 ON m1.id = m2.id_padre-->
+        SELECT m1.id AS id,
+            m1.nombre AS nombre,
+            m2.id AS id_hijo,
+            m2.nombre AS nombre_hijo
+        FROM menú m1
+        JOIN menú m2 ON m1.id = m2.id_padre
+        ORDER BY m1.id
+<!--        SELECT m1.id as id, m1.NOMBRE AS nombre, m2.id as id_hijo, m2.nombre as nombre_hijo FROM 
+        menú m1
+        left join menú m2 on m1.id = m2.ID_PADRE        
+        order by id        -->
+    </select>
+    
+<!--    <resultMap id="MapeoMenú" type="Menú">
+        <id property="id" column="id" />
+        <result property="nombre" column="nombre" />
+        
+        <association property="padre" resultMap="MapeoMenú" />
+        <collection property="hijos" ofType="Menú" resultMap="MapeoMenú" />
+    </resultMap>        -->
+    
+    <resultMap id="MapeoMenú" type="Menú">
+        <id property="id" column="id" />
+        <result property="nombre" column="nombre" />
+        <collection property="hijos" ofType="Menú" >
+            <id property="id" column="id_hijo" />
+            <result property="nombre" column="nombre_hijo" />
+            <association property="padre" resultMap="MapeoMenú" />
+        </collection>
+    </resultMap>       
+    
+    
+    
+        
+    <select id="getCategorías" resultMap="MapeoCategorías">
+        SELECT c.id AS id, 
+            c.nombre AS nombre, 
+            p.cat_hija AS hija_id, 
+            c2.nombre AS hija_nombre,
+            p2.cat_padre AS id_padre,
+            c3.nombre AS nombre_padre
+        FROM categoría AS c 
+        LEFT JOIN cat_jerarq AS p ON c.id = p.cat_padre
+        LEFT JOIN categoría AS c2 ON p.cat_hija = c2.id
+        LEFT JOIN cat_jerarq AS p2 ON c.id = p2.cat_hija
+        LEFT JOIN categoría AS c3 ON p2.cat_padre = c3.id
+    </select>
+    
+    <resultMap id="MapeoCategorías" type="Categoría">
+        <id property="id" column="id" />
+        <result property="nombre" column="nombre" />
+        
+        <collection property="hijos" ofType="Categoría" column="id_hija" resultMap="MapeoCategorías" />
+<!--        <collection property="hijos" ofType="Categoría" resultMap="MapeoCategorías" columnPrefix="hija_"/>--> <!-- ESTO DESBORDA LA PILA -->
+        
+    </resultMap>
+</mapper>
